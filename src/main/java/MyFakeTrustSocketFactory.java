@@ -40,23 +40,23 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
      *
      * @throws Exception
      */
-    protected SSLContext getContext() throws Exception {
-
-        try {
-            SSLContext sc = SSLContext.getInstance("SSL");
-
-            sc.init(null, // we don't need no stinkin KeyManager
-                    new TrustManager[]{new MyFakeTrustSocketFactory.MyFakeX509TrustManager()},
-                    new java.security.SecureRandom());
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("My fake Socket Factory get context "));
-            }
-            return sc;
-        } catch (Exception exc) {
-            log.error(Messages.getMessage("My fake Socket Factory get context Exception"), exc);
-            throw new Exception(Messages.getMessage("ftsf02"));
-        }
-    }
+//    protected SSLContext getContext() throws Exception {
+//
+//        try {
+//            SSLContext sc = SSLContext.getInstance("SSL");
+//
+//            sc.init(null, // we don't need no stinkin KeyManager
+//                    new TrustManager[]{new MyFakeTrustSocketFactory.MyFakeX509TrustManager()},
+//                    new java.security.SecureRandom());
+//            if (log.isDebugEnabled()) {
+//                log.debug(Messages.getMessage("My fake Socket Factory get context "));
+//            }
+//            return sc;
+//        } catch (Exception exc) {
+//            log.error(Messages.getMessage("My fake Socket Factory get context Exception"), exc);
+//            throw new Exception(Messages.getMessage("ftsf02"));
+//        }
+//    }
     protected SSLSocketFactory sslFactory = null;
     protected void initFactory() throws IOException {
         sslFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
@@ -73,23 +73,30 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
      */
     public Socket create(String host, int port, StringBuffer otherHeaders, BooleanHolder useFullURL) throws Exception {
         SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
-        String kf = "D:\\spidr1.truststore";
+        String ts = "D:\\spidr1.truststore";
+        String ksf = "D:\\spidr.keystore";
      //   String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
         String keyStoreFilePassword = "changeit";
-        File keystoreFile = new File(kf);
+        File keystoreFile = new File(ts);
         if(!keystoreFile.exists() || keystoreFile.isDirectory())
             return null;
 
-        KeyStore keyStore = KeyStore.getInstance("JKS", "SUN");
-        FileInputStream fin = new FileInputStream(kf);
-        keyStore.load(fin, keyStoreFilePassword.toCharArray());
-
-       /* final LiveCertX509TrustManager tm = new LiveCertX509TrustManager();
-        final TrustManager[] tms = new TrustManager[] { tm };*/
+        KeyStore trustStore = KeyStore.getInstance("JKS", "SUN");
+        FileInputStream fin = new FileInputStream(ts);
+        trustStore.load(fin, keyStoreFilePassword.toCharArray());
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        tmf.init(keyStore);
+        tmf.init(trustStore);
 
+        KeyStore keyStore2 = KeyStore.getInstance("JKS");
+        FileInputStream inputStream2 = new FileInputStream(ksf);
+        keyStore2.load(inputStream2, keyStoreFilePassword.toCharArray());
+
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("Sunx509");
+        keyManagerFactory.init(keyStore2, keyStoreFilePassword.toCharArray());
+        KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
+
+        // to use just server auth, keep first param null, not keyManagers
         sslContext.init(null,
                 tmf.getTrustManagers(),
                 new java.security.SecureRandom() );

@@ -25,7 +25,7 @@ public class MainTest {
         boolean nextPA = false;
         URL paAddress = null;
         try {
-            paAddress = new URL("https://47.168.116.9:8043/sopi/services/ServerInfoUserService");
+            paAddress = new URL("https://47.168.116.8:8043/sopi/services/ServerInfoUserService");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
