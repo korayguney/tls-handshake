@@ -4,7 +4,9 @@ import com.nortelnetworks.ws.serverinfo.ServerInfoUserServiceStub;
 import org.apache.axis.AxisProperties;
 import org.apache.axis.client.Stub;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.rpc.ServiceException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -14,18 +16,22 @@ public class MainTest {
 
     public static void main(String argv[]) {
         A2SopiWSClient wsClient = new A2SopiServerInfoUserSvcWSClient();
-        System.out.println(makeWSCall("u1016@spidr.com", "1234", null, wsClient));
+        try {
+            System.out.println(makeWSCall("u1016@spidr.com", "1234", null, wsClient));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
     public static HashMap<String, Object> makeWSCall(String a2UserName,
-                                                     String a2Password, Object[] obj, A2SopiWSClient... wsClients) {
+                                                     String a2Password, Object[] obj, A2SopiWSClient... wsClients) throws IOException {
         boolean allWSClientsDone = false;
         boolean nextA2 = false;
         boolean nextPA = false;
         URL paAddress = null;
         try {
-            paAddress = new URL("https://47.168.116.8:8043/sopi/services/ServerInfoUserService");
+            paAddress = new URL("https://47.168.116.9:8043/sopi/services/ServerInfoUserService");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -52,7 +58,7 @@ public class MainTest {
 
     interface A2SopiWSClient {
         Object runService(URL paAddress, String a2UserName, String a2Password) throws ServiceException,
-                 RemoteException;
+                 RemoteException, IOException;
     }
 
     public static class A2SopiServerInfoUserSvcWSClient implements A2SopiWSClient {
@@ -77,7 +83,7 @@ public class MainTest {
          */
 
         public Object runService(URL paAddress, String a2UserName, String a2Password) throws ServiceException,
-                 RemoteException {
+                IOException {
             ServerInfoUserServiceStub stub = new ServerInfoUserServiceStub(paAddress,null);
            stub.setPortName("8043");
             ServerInfoUserIF service = stub;
@@ -92,7 +98,6 @@ public class MainTest {
 
                 System.out.println("Used A2 getServices to get assigned services for  " + a2UserName + " from "
                         + paAddress.getHost() + ":" + paAddress.getPort());
-
 
             int paPort = service.getSOAPServerData().getHttpsPort();
             System.out.println("HTTPS port number : " + paPort);

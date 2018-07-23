@@ -4,9 +4,14 @@
 
     import java.io.*;
     import java.net.URI;
-    import java.security.cert.CertificateException;
-    import java.security.cert.CertificateFactory;
-    import java.security.cert.X509Certificate;
+    import java.security.KeyStore;
+    import java.security.KeyStoreException;
+    import java.security.NoSuchAlgorithmException;
+    import java.security.NoSuchProviderException;
+    import java.security.cert.*;
+    import java.util.Arrays;
+    import java.util.Enumeration;
+    import java.util.List;
 
     public class MainTest {
 
@@ -23,20 +28,42 @@
         public static String revokedcert= "certs/revoked.crt";
         public static String revokedcert2= "certs/revoked2.crt";
 
-        static File certFile = new File(serverCert);
+        public static String lab9user= "certs/lab9user.crt";
+        public static String lab9root= "certs/lab9root.crt";
 
-        public static void isFileExist(){
-            if (certFile.exists()){
-                System.out.println("Certificate founded!");
-            }else {
-                System.out.println("Certificate NOT FOUND!");
-            }
-        }
+        public static String web1= "certs/web1.crt";
+        public static String web2= "certs/web3.crt";
 
-        public static void main(String[] args) throws IOException, CertificateException, OcspException {
-            isFileExist();
+//        static File certFile = new File(serverCert);
+//
+//        public static void isFileExist(){
+//            if (certFile.exists()){
+//                System.out.println("Certificate founded!");
+//            }else {
+//                System.out.println("Certificate NOT FOUND!");
+//            }
+//        }
+
+        public static void main(String[] args) throws IOException, CertificateException, OcspException, NoSuchProviderException, KeyStoreException, NoSuchAlgorithmException {
+//            isFileExist();
+
+            String ts = "D:\\spidr1.truststore";
+            String keyStoreFilePassword = "changeit";
+
+            KeyStore trustStore = KeyStore.getInstance("JKS", "SUN");
+            FileInputStream fin = new FileInputStream(ts);
+            trustStore.load(fin, keyStoreFilePassword.toCharArray());
+
+
+//            Enumeration en = trustStore.aliases();
+//            System.out.println(en.nextElement().toString());
+
+//            String alias = (String)en.nextElement() ;
+            // X509Certificate certs = (X509Certificate) trustStore.getCertificate(alias);
+            //System.out.println("Domain Name of cert with "+ alias + " is :" +certs.getIssuerDN());
+
             X509Certificate certificate = createCert(serverCert);
-            X509Certificate issuer = createCert(rootCert);
+            X509Certificate issuer = createCert(intCert);
 
 
             // Create OCSP Client using builder.
@@ -55,6 +82,7 @@
             System.out.println(uri.toString());
 
             System.out.println(response.getStatus());
+
         }
 
         public static X509Certificate createCert(String certData) throws IOException, CertificateException {
@@ -71,4 +99,10 @@
             }
         }
 
+        public URI ocspURI(X509Certificate certificate) throws IOException, CertificateException, OcspException {
+
+            Properties properties = null;
+            URI uri = new AbstractOcspClient(properties).detectOcspUri(certificate);
+            return uri;
+        }
     }

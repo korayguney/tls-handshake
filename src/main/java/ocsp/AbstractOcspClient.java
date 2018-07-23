@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author erlend
  */
-class AbstractOcspClient {
+public class AbstractOcspClient {
 
     public static final Property<Boolean> EXCEPTION_ON_NO_PATH = Property.create(false);
 
@@ -49,7 +49,7 @@ class AbstractOcspClient {
      *
      * @param properties Properties provided by the builder.
      */
-    protected AbstractOcspClient(Properties properties) {
+    public AbstractOcspClient(Properties properties) {
         this.properties = properties;
     }
 
@@ -68,7 +68,7 @@ class AbstractOcspClient {
         throw new OcspException("Unable to find issuer '%s'.", certificate.getIssuerX500Principal().getName());
     }
 
-    protected URI detectOcspUri(X509Certificate certificate) throws OcspException {
+    public URI detectOcspUri(X509Certificate certificate) throws OcspException {
         byte[] extensionValue = certificate.getExtensionValue(Extension.authorityInfoAccess.getId());
 
         if (extensionValue == null) {
