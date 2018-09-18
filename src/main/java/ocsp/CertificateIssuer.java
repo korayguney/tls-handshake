@@ -2,6 +2,7 @@ package ocsp;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.CertificateID;
 
 import java.io.Serializable;
@@ -28,7 +29,7 @@ public class CertificateIssuer implements Serializable {
             OcspDigestOutputStream digestCalculator = new OcspDigestOutputStream("SHA-1");
 
             // Create an instance of the issuer certificate for use with Bouncy Caste/ASN1.
-            X509CertificateHolder issuerHolder = new X509CertificateHolder(certificate.getEncoded());
+            JcaX509CertificateHolder issuerHolder = new JcaX509CertificateHolder(certificate);
 
             // Calculate hashes to identify issuer certificate.
             byte[] issuerNameHash =

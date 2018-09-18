@@ -21,7 +21,6 @@ public class MainTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     public static HashMap<String, Object> makeWSCall(String a2UserName,
@@ -31,7 +30,7 @@ public class MainTest {
         boolean nextPA = false;
         URL paAddress = null;
         try {
-            paAddress = new URL("https://47.168.116.9:8043/sopi/services/ServerInfoUserService");
+            paAddress = new URL("https://47.168.116.8:8043/sopi/services/ServerInfoUserService");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -44,6 +43,7 @@ public class MainTest {
 
         AxisProperties.setProperty("axis.socketSecureFactory",
                 "MyFakeTrustSocketFactory");
+
         try {
             response = wsClient.runService(paAddress, a2UserName, a2Password);
         } catch (RemoteException e) {
@@ -74,9 +74,6 @@ public class MainTest {
         public A2SopiServerInfoUserSvcWSClient() {
             super();
         }
-
-
-
 
         /**
          * Get data from the PA

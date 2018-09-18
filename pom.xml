@@ -31,12 +31,12 @@
             <artifactId>commons-logging</artifactId>
             <version>1.1.1</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.59</version>
-        </dependency>
+        </dependency> -->
 
         <dependency>
             <groupId>com.genband.wae.callsvr</groupId>
@@ -70,8 +70,10 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.57</version>
+            <version>1.59</version>
         </dependency>
+
+
 
         <!-- Apache HTTP Client -->
         <dependency>

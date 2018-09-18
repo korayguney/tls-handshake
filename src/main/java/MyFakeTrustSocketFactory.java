@@ -18,17 +18,15 @@ import java.io.*;
 import java.net.Socket;
 import javax.net.ssl.*;
 import java.net.URI;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.*;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 
 public class MyFakeTrustSocketFactory implements SecureSocketFactory {
     String ts = "D:\\spidr1.truststore";
-    String ksf = "D:\\spidr.keystore";
+    String ksf = "D:\\chap8.secure.keystore";
     //   String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
     String keyStoreFilePassword = "changeit";
 
@@ -59,6 +57,40 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         trustStore.load(fin, keyStoreFilePassword.toCharArray());
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         tmf.init(trustStore);
+
+        X509Certificate[] certs = new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0]).getAcceptedIssuers();
+        String ersin = certs[2].getIssuerDN().getName();
+
+        Enumeration en = trustStore.aliases();
+        X509Certificate signingcert = null;
+
+        while (en.hasMoreElements())
+        {
+            X509Certificate storecert = null;
+            String ali = (String)en.nextElement() ;
+            if(trustStore.isCertificateEntry(ali))
+            {
+                storecert = (X509Certificate)trustStore.getCertificate(ali);
+                if( (storecert.getIssuerDN().getName()).equals(ersin))
+                {
+                    try{
+                        System.out.println("Found matching issuer DN cert in keystore:\r\nChecking signature on cert ...") ;
+                        System.out.println("Root Public Key : " + storecert.getPublicKey().hashCode());
+                        System.out.println("Signature verified on certificate") ;
+                        signingcert = storecert;
+                        break;
+                    }
+                    catch(Exception exc){
+                        System.out.println("Failed to verify signature on certificate with matching cert DN");
+                    }
+                }
+            }
+            else
+            if(trustStore.isKeyEntry(ali))
+                System.out.println(ali + "   **** key entry ****");
+        }
+
+
 //        System.out.println("SIZE TEST : " + trustStore.size());
 
 //        CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -91,11 +123,12 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
 
         KeyStore keyStore2 = KeyStore.getInstance("JKS");
         FileInputStream inputStream2 = new FileInputStream(ksf);
-        keyStore2.load(inputStream2, keyStoreFilePassword.toCharArray());
+        keyStore2.load(inputStream2, "mDPxad08l36nYHPFgrwHJM6gcOcfUc5u".toCharArray());
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("Sunx509");
-        keyManagerFactory.init(keyStore2, keyStoreFilePassword.toCharArray());
+        keyManagerFactory.init(keyStore2, "mDPxad08l36nYHPFgrwHJM6gcOcfUc5u".toCharArray());
         KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
+
 
 //        X509TrustManager defaultTrustManager = (X509TrustManager) tmf.getTrustManagers()[0];
 //        X509Certificate[] certs = defaultTrustManager.getAcceptedIssuers();
@@ -105,7 +138,8 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
 
         // to use just server auth, keep first param null, not keyManagers
         sslContext.init(keyManagers,
-                new MyFakeX509TrustManager[]{new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0])},
+                // new MyFakeX509TrustManager[]{new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0])},
+                new TrustManager[]{new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0])},
                 new java.security.SecureRandom() );
         sslFactory = sslContext.getSocketFactory();
 
@@ -205,9 +239,25 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         }
 
         ((SSLSocket) sslSocket).startHandshake();
+//        String[] cipherSuites = ((SSLSocket) sslSocket).getSupportedCipherSuites();
+//        String[] cipherSuites1 =((SSLSocket) sslSocket).getEnabledCipherSuites();
+//        for (int i = 0; i < cipherSuites.length ; i++) {
+//            System.out.println("Supported Chipher " + i + " : " + cipherSuites[i].toString());
+//
+//        }
+//
+//        for (int i = 0; i < cipherSuites1.length ; i++) {
+//            System.out.println("Enabled Chipher " + i + " : " + cipherSuites1[i].toString());
+//        }
 
        /** Koray GÜNEY **/
-//        SSLSession sslSession = ((SSLSocket) sslSocket).getSession();
+        SSLSession sslSession = ((SSLSocket) sslSocket).getSession();
+        //System.out.println("TLS VERSION : " + sslSession.getProtocol());
+        //System.out.println("SSL Context Provider : " + sslContext.getProvider());
+
+        /*for (int i = 0; i < ((SSLSocket) sslSocket).getSupportedProtocols().length ; i++) {
+            System.out.println("SUPPORTED PROTOCOLS : " + (((SSLSocket) sslSocket).getSupportedProtocols())[i]);
+        }*/
 //        javax.security.cert.X509Certificate[] certificates = sslSession.getPeerCertificateChain();
 //        X509Certificate certUser = convert(certificates[1]);
 //        X509Certificate certRoot = convert(certificates[2]);
@@ -256,58 +306,22 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         protected static Log log =
                 LogFactory.getLog(MyFakeTrustSocketFactory.MyFakeX509TrustManager.class.getName());
 
-        /**
-         * Method isClientTrusted
-         *
-         * @param chain
-         *
-         * @return
-         */
-        public boolean isClientTrusted(java.security.cert
-                                                .X509Certificate[] chain) {
-
-            System.out.println("my fake trust manager is client trusted");
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("my fake trust manager is client trusted"));
-            }
-
-
-            try {
-                myTrustManager.checkClientTrusted(chain,null);
-            } catch (CertificateException e) {
-                e.printStackTrace();
-            }
-
-
-            return true;
-        }
-
-        /**
-         * Method isServerTrusted
-         *
-         * @param chain
-         *
-         * @return
-         */
-        public boolean isServerTrusted(java.security.cert
-                                               .X509Certificate[] chain) {
-
-
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("my fake trust manager is server trusted"));
-            }
-            return true;
-        }
         //TODO :
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-
             return;
         }
         //TODO :
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            System.out.println("my fake trust manager is client trusted");
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("my fake trust manager is client trusted"));
+            //X509Certificate[] testcert = getAcceptedIssuers();
+            //System.out.println("Serial number : " + testcert[1].getSerialNumber());
+            try {
+                OCSP.RevocationStatus ocspStatus = OCSP.check(x509Certificates[0], x509Certificates[1]);
+                System.out.println("TEST :" + ocspStatus.getCertStatus().toString());
+                System.out.println("SONUC:  "+x509Certificates[1].getIssuerDN());
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (CertPathValidatorException e) {
+                e.printStackTrace();
             }
 
             try {
@@ -316,19 +330,25 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
                 e.printStackTrace();
             }
 
-            // Create OCSP Client using builder.
+            /* Create OCSP Client using builder.
             OcspClient client = OcspClient.builder()
-                    .set(OcspClient.EXCEPTION_ON_UNKNOWN, false) // Remove to trigger exception on 'UNKNOWN'.
-                    .set(OcspClient.EXCEPTION_ON_REVOKED, false) // Remove to trigger exception on 'REVOKED'.
+                    //.set(OcspClient.EXCEPTION_ON_UNKNOWN, false) // Remove to trigger exception on 'UNKNOWN'.
+                    //.set(OcspClient.EXCEPTION_ON_REVOKED, false) // Remove to trigger exception on 'REVOKED'.
                     .build();
             // Verify certificate (issuer certificate required).
             CertificateResult response = null;
+
+            int certificateChainSize= x509Certificates.length;
+            System.out.println("Total cert in the chain : " + certificateChainSize);
+
             try {
-                response = client.verify(x509Certificates[0], x509Certificates[1]);
+                for (int i = 0; i < certificateChainSize-1 ; i++) {
+                    response = client.verify(x509Certificates[i], x509Certificates[i+1]);
+                    System.out.println("Validated cert no: " + x509Certificates[i].getSerialNumber());
+                }
             } catch (OcspException e) {
                 e.printStackTrace();
             }
-
 
             // Prints 'GOOD', 'REVOKED' or 'UNKNOWN'.
             Properties properties = null;
@@ -339,9 +359,7 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
                 e.printStackTrace();
             }
             System.out.println(uri.toString());
-
-            System.out.println(response.getStatus());
-
+            System.out.println(response.getStatus()); */
         }
 
         /**
@@ -349,12 +367,17 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
          *
          * @return
          */
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+        public X509Certificate[] getAcceptedIssuers() {
 
-            if (log.isDebugEnabled()) {
+           /* if (log.isDebugEnabled()) {
                 log.debug(Messages.getMessage("My Fake Trust manager get accepted issuers"));
             }
-            return null;
+            return null;*/
+
+             return myTrustManager.getAcceptedIssuers();
+            // return new X509Certificate[0];
+
+
         }
     }
 
