@@ -20,9 +20,7 @@ import javax.net.ssl.*;
 import java.net.URI;
 import java.security.*;
 import java.security.cert.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 public class MyFakeTrustSocketFactory implements SecureSocketFactory {
     String ts = "D:\\spidr1.truststore";
@@ -59,36 +57,36 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         tmf.init(trustStore);
 
         X509Certificate[] certs = new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0]).getAcceptedIssuers();
-        String ersin = certs[2].getIssuerDN().getName();
-
-        Enumeration en = trustStore.aliases();
-        X509Certificate signingcert = null;
-
-        while (en.hasMoreElements())
-        {
-            X509Certificate storecert = null;
-            String ali = (String)en.nextElement() ;
-            if(trustStore.isCertificateEntry(ali))
-            {
-                storecert = (X509Certificate)trustStore.getCertificate(ali);
-                if( (storecert.getIssuerDN().getName()).equals(ersin))
-                {
-                    try{
-                        System.out.println("Found matching issuer DN cert in keystore:\r\nChecking signature on cert ...") ;
-                        System.out.println("Root Public Key : " + storecert.getPublicKey().hashCode());
-                        System.out.println("Signature verified on certificate") ;
-                        signingcert = storecert;
-                        break;
-                    }
-                    catch(Exception exc){
-                        System.out.println("Failed to verify signature on certificate with matching cert DN");
-                    }
-                }
-            }
-            else
-            if(trustStore.isKeyEntry(ali))
-                System.out.println(ali + "   **** key entry ****");
-        }
+//        String ersin = certs[2].getIssuerDN().getName();
+//
+//        Enumeration en = trustStore.aliases();
+//        X509Certificate signingcert = null;
+//
+//        while (en.hasMoreElements())
+//        {
+//            X509Certificate storecert = null;
+//            String ali = (String)en.nextElement() ;
+//            if(trustStore.isCertificateEntry(ali))
+//            {
+//                storecert = (X509Certificate)trustStore.getCertificate(ali);
+//                if( (storecert.getIssuerDN().getName()).equals(ersin))
+//                {
+//                    try{
+//                        System.out.println("Found matching issuer DN cert in keystore:\r\nChecking signature on cert ...") ;
+//                        System.out.println("Root Public Key : " + storecert.getPublicKey().hashCode());
+//                        System.out.println("Signature verified on certificate") ;
+//                        signingcert = storecert;
+//                        break;
+//                    }
+//                    catch(Exception exc){
+//                        System.out.println("Failed to verify signature on certificate with matching cert DN");
+//                    }
+//                }
+//            }
+//            else
+//            if(trustStore.isKeyEntry(ali))
+//                System.out.println(ali + "   **** key entry ****");
+//        }
 
 
 //        System.out.println("SIZE TEST : " + trustStore.size());
@@ -314,15 +312,15 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             //X509Certificate[] testcert = getAcceptedIssuers();
             //System.out.println("Serial number : " + testcert[1].getSerialNumber());
-            try {
-                OCSP.RevocationStatus ocspStatus = OCSP.check(x509Certificates[0], x509Certificates[1]);
-                System.out.println("TEST :" + ocspStatus.getCertStatus().toString());
-                System.out.println("SONUC:  "+x509Certificates[1].getIssuerDN());
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (CertPathValidatorException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                OCSP.RevocationStatus ocspStatus = OCSP.check(x509Certificates[0], x509Certificates[1]);
+//                System.out.println("TEST :" + ocspStatus.getCertStatus().toString());
+//                System.out.println("SONUC:  "+x509Certificates[1].getIssuerDN());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (CertPathValidatorException e) {
+//                e.printStackTrace();
+//            }
 
             try {
                 myTrustManager.checkServerTrusted(x509Certificates,s);
@@ -330,7 +328,7 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
                 e.printStackTrace();
             }
 
-            /* Create OCSP Client using builder.
+            // Create OCSP Client using builder.
             OcspClient client = OcspClient.builder()
                     //.set(OcspClient.EXCEPTION_ON_UNKNOWN, false) // Remove to trigger exception on 'UNKNOWN'.
                     //.set(OcspClient.EXCEPTION_ON_REVOKED, false) // Remove to trigger exception on 'REVOKED'.
@@ -344,7 +342,6 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
             try {
                 for (int i = 0; i < certificateChainSize-1 ; i++) {
                     response = client.verify(x509Certificates[i], x509Certificates[i+1]);
-                    System.out.println("Validated cert no: " + x509Certificates[i].getSerialNumber());
                 }
             } catch (OcspException e) {
                 e.printStackTrace();
@@ -359,7 +356,7 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
                 e.printStackTrace();
             }
             System.out.println(uri.toString());
-            System.out.println(response.getStatus()); */
+            System.out.println(response.getStatus());
         }
 
         /**

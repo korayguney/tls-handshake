@@ -72,6 +72,7 @@
                     .set(OcspClient.EXCEPTION_ON_REVOKED, false) // Remove to trigger exception on 'REVOKED'.
                     .build();
 
+
             // Verify certificate (issuer certificate required).
             CertificateResult response = client.verify(certificate, issuer);
 
