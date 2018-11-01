@@ -30,7 +30,9 @@ public class AbstractOcspClient {
 
     public static final Property<Boolean> EXCEPTION_ON_NO_PATH = Property.create(false);
 
-    public static final Property<OcspFetcher> FETCHER = Property.create(UrlOcspFetcher.builder().build());
+    //public static final Property<OcspFetcher> FETCHER = Property.create(UrlOcspFetcher.builder().build());
+    public static Property<OcspFetcher> FETCHER = Property.create(UrlOcspFetcher.builder().build());
+
 
     public static final Property<List<X509Certificate>> INTERMEDIATES =
             Property.create(Collections.<X509Certificate>emptyList());
@@ -113,6 +115,15 @@ public class AbstractOcspClient {
             }
         } catch (IOException e) {
             throw new OcspException(e.getMessage(), e);
+        }
+    }
+
+    public static void transortFetcher(OcspFetcher fetcher) {
+        if(fetcher == null){
+            FETCHER = Property.create(UrlOcspFetcher.builder().build());
+            System.out.println(UrlOcspFetcher.TIMEOUT_CONNECT.getDefaultValue().toString());
+        }else{
+            FETCHER = Property.create(fetcher);
         }
     }
 }

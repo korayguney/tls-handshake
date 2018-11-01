@@ -30,7 +30,7 @@ public class MainTest {
         boolean nextPA = false;
         URL paAddress = null;
         try {
-            paAddress = new URL("https://47.168.116.8:8043/sopi/services/ServerInfoUserService");
+            paAddress = new URL("https://47.168.116.9:8043/sopi/services/ServerInfoUserService");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -81,6 +81,7 @@ public class MainTest {
 
         public Object runService(URL paAddress, String a2UserName, String a2Password) throws ServiceException,
                 IOException {
+
             ServerInfoUserServiceStub stub = new ServerInfoUserServiceStub(paAddress,null);
            stub.setPortName("8043");
             ServerInfoUserIF service = stub;
@@ -91,7 +92,7 @@ public class MainTest {
 
             Stub.class.cast(service)._setProperty(org.apache.axis.MessageContext.HTTP_TRANSPORT_VERSION,
                     org.apache.axis.transport.http.HTTPConstants.HEADER_PROTOCOL_V11);
-            Stub.class.cast(service).setTimeout(5000);
+            Stub.class.cast(service).setTimeout(15000);
 
                 System.out.println("Used A2 getServices to get assigned services for  " + a2UserName + " from "
                         + paAddress.getHost() + ":" + paAddress.getPort());

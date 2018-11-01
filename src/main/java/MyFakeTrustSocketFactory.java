@@ -1,6 +1,10 @@
 import ocsp.*;
 import ocsp.MainTest;
+import ocsp.api.OcspFetcher;
+import ocsp.api.OcspFetcherResponse;
 import ocsp.builder.Properties;
+import ocsp.fetcher.AbstractOcspFetcher;
+import ocsp.fetcher.UrlOcspFetcher;
 import org.apache.axis.components.logger.LogFactory;
 import org.apache.axis.components.net.BooleanHolder;
 import org.apache.axis.components.net.SecureSocketFactory;
@@ -15,9 +19,8 @@ import sun.security.provider.certpath.OCSP;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
-import java.net.Socket;
+import java.net.*;
 import javax.net.ssl.*;
-import java.net.URI;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
@@ -43,6 +46,7 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
      * Create a socket
      */
     public Socket create(String host, int port, StringBuffer otherHeaders, BooleanHolder useFullURL) throws Exception {
+        //SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
         SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
 
         File keystoreFile = new File(ts);
@@ -139,6 +143,7 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
                 // new MyFakeX509TrustManager[]{new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0])},
                 new TrustManager[]{new MyFakeX509TrustManager((X509TrustManager) tmf.getTrustManagers()[0])},
                 new java.security.SecureRandom() );
+        System.out.println("SSL initialized !!!");
         sslFactory = sslContext.getSocketFactory();
 
 
@@ -154,6 +159,8 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         if (tcp.getProxyHost().length() == 0 || hostInNonProxyList) {
             // direct SSL connection
             sslSocket = sslFactory.createSocket(host, port);
+            // sslSocket.setSoTimeout(10);
+            System.out.println("SSL Socket destination port : " + sslSocket.getPort());
         }
         else {
 
@@ -237,25 +244,25 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         }
 
         ((SSLSocket) sslSocket).startHandshake();
-//        String[] cipherSuites = ((SSLSocket) sslSocket).getSupportedCipherSuites();
-//        String[] cipherSuites1 =((SSLSocket) sslSocket).getEnabledCipherSuites();
-//        for (int i = 0; i < cipherSuites.length ; i++) {
-//            System.out.println("Supported Chipher " + i + " : " + cipherSuites[i].toString());
-//
-//        }
-//
-//        for (int i = 0; i < cipherSuites1.length ; i++) {
-//            System.out.println("Enabled Chipher " + i + " : " + cipherSuites1[i].toString());
-//        }
+        String[] cipherSuites = ((SSLSocket) sslSocket).getSupportedCipherSuites();
+        String[] cipherSuites1 =((SSLSocket) sslSocket).getEnabledCipherSuites();
+        for (int i = 0; i < cipherSuites.length ; i++) {
+            System.out.println("Supported Chipher " + i + " : " + cipherSuites[i].toString());
+
+        }
+
+        for (int i = 0; i < cipherSuites1.length ; i++) {
+            System.out.println("Enabled Chipher " + i + " : " + cipherSuites1[i].toString());
+        }
 
        /** Koray GÜNEY **/
         SSLSession sslSession = ((SSLSocket) sslSocket).getSession();
-        //System.out.println("TLS VERSION : " + sslSession.getProtocol());
-        //System.out.println("SSL Context Provider : " + sslContext.getProvider());
+        System.out.println("TLS VERSION : " + sslSession.getProtocol());
+        System.out.println("SSL Context Provider : " + sslContext.getProvider());
 
-        /*for (int i = 0; i < ((SSLSocket) sslSocket).getSupportedProtocols().length ; i++) {
+        for (int i = 0; i < ((SSLSocket) sslSocket).getSupportedProtocols().length ; i++) {
             System.out.println("SUPPORTED PROTOCOLS : " + (((SSLSocket) sslSocket).getSupportedProtocols())[i]);
-        }*/
+        }
 //        javax.security.cert.X509Certificate[] certificates = sslSession.getPeerCertificateChain();
 //        X509Certificate certUser = convert(certificates[1]);
 //        X509Certificate certRoot = convert(certificates[2]);
@@ -291,12 +298,13 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
     /**
      * Class FakeX509TrustManager
      */
-    public static class MyFakeX509TrustManager implements X509TrustManager {
+    public static class MyFakeX509TrustManager implements X509TrustManager   {
 
         X509TrustManager myTrustManager;
 
         public MyFakeX509TrustManager(X509TrustManager myTrustManager)
         {
+
             this.myTrustManager=myTrustManager;
         }
 
@@ -330,10 +338,16 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
 
             // Create OCSP Client using builder.
             OcspClient client = OcspClient.builder()
+                    //.set(AbstractOcspFetcher.TIMEOUT_CONNECT, 1 )
                     //.set(OcspClient.EXCEPTION_ON_UNKNOWN, false) // Remove to trigger exception on 'UNKNOWN'.
                     //.set(OcspClient.EXCEPTION_ON_REVOKED, false) // Remove to trigger exception on 'REVOKED'.
                     .build();
             // Verify certificate (issuer certificate required).
+
+            OcspFetcher fetcher = UrlOcspFetcher.builder().set(UrlOcspFetcher.TIMEOUT_CONNECT, 5000).build();
+            AbstractOcspClient client1 = OcspClient.builder().build();
+            client1.transortFetcher(null);
+
             CertificateResult response = null;
 
             int certificateChainSize= x509Certificates.length;
@@ -341,22 +355,41 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
 
             try {
                 for (int i = 0; i < certificateChainSize-1 ; i++) {
+                    // checkForTimeout(x509Certificates[i]);
                     response = client.verify(x509Certificates[i], x509Certificates[i+1]);
+
+                    // Prints 'GOOD', 'REVOKED' or 'UNKNOWN'
+                    System.out.println(response.getStatus());
                 }
             } catch (OcspException e) {
                 e.printStackTrace();
             }
 
-            // Prints 'GOOD', 'REVOKED' or 'UNKNOWN'.
+        }
+
+        private void checkForTimeout(X509Certificate x509Certificate) {
             Properties properties = null;
             URI uri = null;
+            HttpURLConnection connection = null;
             try {
-                uri = new AbstractOcspClient(properties).detectOcspUri(x509Certificates[0]);
+                uri = new AbstractOcspClient(properties).detectOcspUri(x509Certificate);
+                System.out.println(x509Certificate.getIssuerDN());
+                URL url = uri.toURL();
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setUseCaches(false);
+                connection.setConnectTimeout(10);
+                connection.setReadTimeout(1);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             } catch (OcspException e) {
                 e.printStackTrace();
             }
             System.out.println(uri.toString());
-            System.out.println(response.getStatus());
+            connection.disconnect();
+            System.out.println();
+            System.out.println(connection.getUseCaches());
         }
 
         /**

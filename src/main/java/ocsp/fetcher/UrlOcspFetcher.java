@@ -48,7 +48,7 @@ public class UrlOcspFetcher extends AbstractOcspFetcher {
         return new UrlOcspFetcherResponse(connection);
     }
 
-    private class UrlOcspFetcherResponse implements OcspFetcherResponse {
+    public class UrlOcspFetcherResponse implements OcspFetcherResponse {
 
         private HttpURLConnection connection;
 
